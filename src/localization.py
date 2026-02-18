@@ -140,12 +140,6 @@ STRINGS = {
         "status.Ritual":      "Ritual",
         "status.Thorns":      "Thorns",
 
-        # ── New Relics ──
-        "relic.name.Kryptonite":    "Kryptonite",
-        "relic.desc.Kryptonite":    "Deal 10% Boss HP on entry.",
-        "relic.name.Fire Pendant":  "Fire Pendant",
-        "relic.desc.Fire Pendant":  "Heal 6 HP at end of combat.",
-
         # ── Action Intents ──
         "intent.attack":      "Attack",
         "intent.defend":      "Defend",
@@ -312,6 +306,23 @@ STRINGS = {
         "card.desc.Evolve":           "Whenever you receive a status card, draw 1 card.",
         "card.desc.Wound":            "Unplayable. Clogs your hand.",
 
+        # ── Relic names ──
+        "relic.name.Burning Blood":        "Burning Blood",
+        "relic.name.Anchor":               "Anchor",
+        "relic.name.Bag of Preparation":   "Bag of Preparation",
+        "relic.name.Red Skull":            "Red Skull",
+        "relic.name.Vajra":                "Vajra",
+        "relic.name.Odd Mushroom":         "Odd Mushroom",
+        "relic.name.Lantern":              "Lantern",
+        "relic.name.Tiny Chest":           "Tiny Chest",
+        "relic.name.Coffee Dripper":       "Coffee Dripper",
+        "relic.name.Philosopher's Stone":  "Philosopher's Stone",
+        "relic.name.Akabeko":              "Akabeko",
+        "relic.name.Centennial Puzzle":    "Centennial Puzzle",
+        "relic.name.Magic Flower":         "Magic Flower",
+        "relic.name.Kryptonite":           "Kryptonite",
+        "relic.name.Fire Pendant":         "Fire Pendant",
+
         # ── Relic descriptions ──
         "relic.desc.Burning Blood":        "Heal 6 HP at end of each combat.",
         "relic.desc.Anchor":               "Start each combat with 10 Block.",
@@ -326,6 +337,8 @@ STRINGS = {
         "relic.desc.Akabeko":              "First Attack each combat deals 8 extra damage.",
         "relic.desc.Centennial Puzzle":    "First time you lose HP each combat, draw 3 cards.",
         "relic.desc.Magic Flower":         "Healing is 50% more effective.",
+        "relic.desc.Kryptonite":           "Deal 10% Boss HP on entry.",
+        "relic.desc.Fire Pendant":         "Heal 6 HP at end of combat.",
     },
 
     LANG_FR: {
@@ -608,6 +621,23 @@ STRINGS = {
         "card.desc.Evolve":           "Chaque carte de statut reçue : piochez 1 carte.",
         "card.desc.Wound":            "Non jouable. Encombre votre main.",
 
+        # ── Relic names ──
+        "relic.name.Burning Blood":        "Sang Brûlant",
+        "relic.name.Anchor":               "Ancre",
+        "relic.name.Bag of Preparation":   "Sac de Préparation",
+        "relic.name.Red Skull":            "Crâne Rouge",
+        "relic.name.Vajra":                "Vajra",
+        "relic.name.Odd Mushroom":         "Champignon Étrange",
+        "relic.name.Lantern":              "Lanterne",
+        "relic.name.Tiny Chest":           "Petit Coffre",
+        "relic.name.Coffee Dripper":       "Verseuse à Café",
+        "relic.name.Philosopher's Stone":  "Pierre Philosophale",
+        "relic.name.Akabeko":              "Akabeko",
+        "relic.name.Centennial Puzzle":    "Puzzle du Centenaire",
+        "relic.name.Magic Flower":         "Fleur Magique",
+        "relic.name.Kryptonite":           "Kryptonite",
+        "relic.name.Fire Pendant":         "Pendentif de Feu",
+
         # ── Relic descriptions ──
         "relic.desc.Burning Blood":        "Soigne 6 PV à la fin de chaque combat.",
         "relic.desc.Anchor":               "Commence chaque combat avec 10 Bouclier.",
@@ -616,11 +646,13 @@ STRINGS = {
         "relic.desc.Vajra":                "Gagne 1 Force au début de chaque combat.",
         "relic.desc.Odd Mushroom":         "Quand Affaibli, gagne 3 PV max.",
         "relic.desc.Lantern":              "Gagne 1 Énergie au premier tour du combat.",
-        "relic.desc.Tiny Chest":           "Toutes les 4 salles est un Coffre.",
+        "relic.desc.Tiny Chest":           "Toute salle n°4 est un Coffre.",
         "relic.desc.Coffee Dripper":       "Gagne 1 Énergie chaque tour.",
         "relic.desc.Philosopher's Stone":  "Gagne 1 Énergie chaque tour. Les ennemis gagnent 1 Force.",
         "relic.desc.Akabeko":              "La première Attaque de chaque combat inflige 8 dégâts supplémentaires.",
         "relic.desc.Centennial Puzzle":    "Première perte de PV du combat : piochez 3 cartes.",
         "relic.desc.Magic Flower":         "Les soins sont 50% plus efficaces.",
+        "relic.desc.Kryptonite":           "Inflige 10% des PV du Boss à l'entrée.",
+        "relic.desc.Fire Pendant":         "Soigne 6 PV à la fin de chaque combat.",
     },
 }

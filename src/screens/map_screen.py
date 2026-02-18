@@ -43,6 +43,18 @@ class MapScreen:
         except:
             self.relic_images = {}
 
+        # ── Background Loading ──
+        try:
+            self.bg_img = pygame.image.load("assets/Dungeon_background.png").convert()
+            self.bg_img = pygame.transform.scale(self.bg_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
+        except:
+            self.bg_img = None
+
+        # ── Scrolling state ──
+        self.scroll_y = 0.0
+        self.target_scroll_y = 0.0
+        self.scroll_speed = 10.0
+
     def handle_event(self, event, game_state) -> bool:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
@@ -50,7 +62,7 @@ class MapScreen:
             
             # 1. Check node clicks
             nodes_by_floor = dungeon.get_nodes_by_floor()
-            scroll_offset = self._get_scroll_offset(dungeon)
+            scroll_offset = int(self.scroll_y)
             
             for floor, nodes in nodes_by_floor.items():
                 for node in nodes:
@@ -66,13 +78,15 @@ class MapScreen:
             if enter_rect.collidepoint(mx, my):
                 game_state.enter_node()
                 return True
+        elif event.type == pygame.MOUSEWHEEL:
+            # Multiply by sensitivity factor
+            self.target_scroll_y -= event.y * 50
+            return True
+            
         return False
 
     def _get_scroll_offset(self, dungeon) -> int:
-        # Simple auto-scroll to current floor
-        floor_h = 100
-        target_y = dungeon.current_floor * floor_h
-        return max(0, target_y - 300)
+        return int(self.scroll_y)
 
     def _get_node_rect(self, node, scroll_offset: int) -> pygame.Rect:
         floor_h = 100
@@ -84,10 +98,27 @@ class MapScreen:
         return pygame.Rect(x - 24, y - 24, 48, 48)
 
     def update(self, dt):
-        pass
+        # ── Smooth scrolling ──
+        # Simple lerp / exponential decay
+        self.scroll_y += (self.target_scroll_y - self.scroll_y) * 0.1
+        
+        # ── Clamping ──
+        # Act length is 15. Floor height is 100.
+        # Max scroll should be around (15 * 100) - window_height
+        max_scroll = 15 * 100 - 400 
+        self.target_scroll_y = max(0, min(self.target_scroll_y, max_scroll))
+        self.scroll_y = max(0, min(self.scroll_y, max_scroll))
 
     def draw(self, surface, game_state):
-        surface.fill(DARK_BG)
+        if self.bg_img:
+            surface.blit(self.bg_img, (0, 0))
+            # Dim the background for legibility
+            overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 160)) # Semi-transparent black
+            surface.blit(overlay, (0, 0))
+        else:
+            surface.fill(DARK_BG)
+
         hero = game_state.hero
         dungeon = game_state.dungeon
 
@@ -128,7 +159,7 @@ class MapScreen:
                 tx_offset = 32
 
             # Simple text clipping/elipsis if too long
-            name_text = r.name
+            name_text = t("relic.name." + r.name)
             available_w = rw - tx_offset - 4
             if self.font_small.size(name_text)[0] > available_w:
                 name_text = name_text[:10] + ".."
