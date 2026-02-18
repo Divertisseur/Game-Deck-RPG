@@ -140,6 +140,12 @@ STRINGS = {
         "status.Ritual":      "Ritual",
         "status.Thorns":      "Thorns",
 
+        # ── New Relics ──
+        "relic.name.Kryptonite":    "Kryptonite",
+        "relic.desc.Kryptonite":    "Deal 10% Boss HP on entry.",
+        "relic.name.Fire Pendant":  "Fire Pendant",
+        "relic.desc.Fire Pendant":  "Heal 6 HP at end of combat.",
+
         # ── Action Intents ──
         "intent.attack":      "Attack",
         "intent.defend":      "Defend",
@@ -429,6 +435,12 @@ STRINGS = {
         "status.Regeneration":"Régénération",
         "status.Ritual":      "Rituel",
         "status.Thorns":      "Épines",
+
+        # ── Nouveaux Reliques ──
+        "relic.name.Kryptonite":    "Kryptonite",
+        "relic.desc.Kryptonite":    "Inflige 10% des PV du Boss à l'entrée.",
+        "relic.name.Fire Pendant":  "Pendentif de Feu",
+        "relic.desc.Fire Pendant":  "Soigne 6 PV à la fin du combat.",
 
         # ── Action Intents ──
         "intent.attack":      "Attaque",

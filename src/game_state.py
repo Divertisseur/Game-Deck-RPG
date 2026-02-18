@@ -35,6 +35,12 @@ class GameState:
         self.previous_state = self.state
         self.state = state
 
+    def select_node(self, node_id: str):
+        """Select a reachable node on the map."""
+        if self.dungeon.select_node(node_id):
+            return True
+        return False
+
     def enter_node(self):
         """Called when player clicks 'Enter' on the current node."""
         node = self.dungeon.current_node()

@@ -2,9 +2,10 @@
 Map Screen — shows the dungeon node list and lets the player enter the next node.
 """
 import pygame
+import math
 from src.constants import *
 from src.screens.ui_utils import draw_text, draw_button, draw_panel, draw_bar, get_font
-from src.systems.dungeon import NODE_ICONS, NODE_COLORS
+from src.systems.dungeon import *
 from src.localization import t
 
 
@@ -15,15 +16,72 @@ class MapScreen:
         self.font_small = get_font(16)
         self.font_btn   = get_font(24, bold=True)
 
+        # ── Asset Loading ──
+        self.icons = {}
+        icon_files = {
+            NODE_ENEMY:    "enemy_icon.png", # Fallback if specific Slime isn't used
+            NODE_ELITE:    "node_elite.png",
+            NODE_BOSS:     "node_boss.png",
+            NODE_CHEST:    "node_chest.png",
+            NODE_MERCHANT: "node_merchant.png",
+            NODE_EVENT:    "node_event.png",
+        }
+        for ntype, fname in icon_files.items():
+            try:
+                path = f"assets/icons/{fname}"
+                img = pygame.image.load(path).convert_alpha()
+                self.icons[ntype] = pygame.transform.scale(img, (32, 32))
+            except:
+                self.icons[ntype] = None
+
+        # Specific assets
+        try:
+            self.relic_images = {
+                "Fire Pendant": pygame.transform.scale(pygame.image.load("assets/icons/Fire_pendant.png").convert_alpha(), (24, 24)),
+                "Kryptonite":   pygame.transform.scale(pygame.image.load("assets/icons/kriptonite.png").convert_alpha(), (24, 24)),
+            }
+        except:
+            self.relic_images = {}
+
     def handle_event(self, event, game_state) -> bool:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
+            dungeon = game_state.dungeon
+            
+            # 1. Check node clicks
+            nodes_by_floor = dungeon.get_nodes_by_floor()
+            scroll_offset = self._get_scroll_offset(dungeon)
+            
+            for floor, nodes in nodes_by_floor.items():
+                for node in nodes:
+                    rect = self._get_node_rect(node, scroll_offset)
+                    if rect.collidepoint(mx, my):
+                        if node.reachable:
+                            game_state.select_node(node.id)
+                            return True
+
+            # 2. Check Enter button
             btn_w, btn_h = 300, 60
             enter_rect = pygame.Rect(SCREEN_WIDTH // 2 - btn_w // 2, SCREEN_HEIGHT - 95, btn_w, btn_h)
             if enter_rect.collidepoint(mx, my):
                 game_state.enter_node()
                 return True
         return False
+
+    def _get_scroll_offset(self, dungeon) -> int:
+        # Simple auto-scroll to current floor
+        floor_h = 100
+        target_y = dungeon.current_floor * floor_h
+        return max(0, target_y - 300)
+
+    def _get_node_rect(self, node, scroll_offset: int) -> pygame.Rect:
+        floor_h = 100
+        node_spacing = 150
+        
+        # Bottom-up rendering: Floor 1 is near bottom
+        y = SCREEN_HEIGHT - 200 - (node.floor * floor_h) + scroll_offset
+        x = SCREEN_WIDTH // 2 - (2.5 * node_spacing) + (node.x_pos * node_spacing) + 125
+        return pygame.Rect(x - 24, y - 24, 48, 48)
 
     def update(self, dt):
         pass
@@ -38,54 +96,107 @@ class MapScreen:
                   self.font_title, GOLD, center=True)
 
         # ── Hero stats panel ──
-        draw_panel(surface, 20, 70, 260, 130)
-        draw_text(surface, hero.name, 30, 80, self.font, WHITE)
-        draw_text(surface, f"{t('map.floor')} {dungeon.current_floor}", 30, 108, self.font_small, LIGHT_GREY)
-        draw_bar(surface, 30, 130, 200, 18, hero.current_hp, hero.max_hp,
+        # Larger panel with more padding
+        panel_y = 70
+        panel_h = 180
+        draw_panel(surface, 20, panel_y, 280, panel_h, color=(30, 25, 50, 200), border_color=(100, 90, 150))
+        
+        draw_text(surface, hero.name, 35, panel_y + 15, self.font, WHITE)
+        draw_text(surface, f"{t('map.floor')} {dungeon.current_floor}", 35, panel_y + 45, self.font_small, LIGHT_GREY)
+        
+        # HP Bar
+        draw_bar(surface, 35, panel_y + 75, 230, 22, hero.current_hp, hero.max_hp,
                  HP_BAR_FG, HP_BAR_BG, f"{t('hero.hp')} {hero.current_hp}/{hero.max_hp}")
-        draw_text(surface, f"{t('map.gold')} {hero.gold}", 30, 158, self.font_small, GOLD)
+        
+        draw_text(surface, f"{t('map.gold')} {hero.gold}", 35, panel_y + 110, self.font_small, GOLD)
 
         # ── Relics ──
-        relic_x = 30
+        # Expanded relic boxes with better spacing
+        relic_y = panel_y + 135
+        relic_x = 35
         for r in hero.relics:
-            pygame.draw.rect(surface, PURPLE, (relic_x, 185, 80, 22), border_radius=4)
-            draw_text(surface, r.name[:10], relic_x + 2, 187, self.font_small, WHITE, shadow=False)
-            relic_x += 90
+            # Draw relic box (wider)
+            rw, rh = 120, 28
+            pygame.draw.rect(surface, PURPLE, (relic_x, relic_y, rw, rh), border_radius=6)
+            pygame.draw.rect(surface, (200, 150, 255), (relic_x, relic_y, rw, rh), 1, border_radius=6)
+            
+            # Draw relic icon if available
+            img = self.relic_images.get(r.name)
+            tx_offset = 6
+            if img:
+                surface.blit(img, (relic_x + 4, relic_y + 2))
+                tx_offset = 32
 
-        # ── Node list ──
-        # Show last 10 nodes
-        nodes = dungeon.nodes[-10:] if len(dungeon.nodes) > 10 else dungeon.nodes
-        list_w = 460
-        list_x = SCREEN_WIDTH // 2 - list_w // 2
-        list_y = 80
-        for node in nodes:
-            color = NODE_COLORS.get(node.node_type, GREY)
-            icon  = NODE_ICONS.get(node.node_type, "?")
-            
-            if node.current:
-                # Highlight current node
-                pygame.draw.rect(surface, (*color, 40),
-                                 (list_x - 10, list_y - 5, list_w + 20, 44),
-                                 border_radius=8)
-                pygame.draw.rect(surface, color,
-                                 (list_x - 10, list_y - 5, list_w + 20, 44),
-                                 2, border_radius=8)
+            # Simple text clipping/elipsis if too long
+            name_text = r.name
+            available_w = rw - tx_offset - 4
+            if self.font_small.size(name_text)[0] > available_w:
+                name_text = name_text[:10] + ".."
+                
+            draw_text(surface, name_text, relic_x + tx_offset, relic_y + 4, self.font_small, WHITE, shadow=True)
+            relic_x += rw + 10
+            if relic_x > 260: # Wrap if too many relics for the panel width
+                relic_x = 35
+                relic_y += rh + 5
 
-            status = t("map.current") if node.current else (t("map.done") if node.completed else "")
-            node_name = t(f"node.{node.node_type}")
-            label = f"{t('map.floor')} {node.floor}  {icon}  {node_name}"
-            col = color if node.current else (GREY if node.completed else LIGHT_GREY)
-            
-            # Draw label
-            draw_text(surface, label, list_x + 10, list_y + 5, self.font, col)
-            
-            # Draw status (right-aligned)
-            if status:
-                status_font = self.font_small
-                tw = status_font.size(status)[0]
-                draw_text(surface, status, list_x + list_w - tw - 10, list_y + 9, status_font,
-                          GOLD if node.current else GREEN)
-            list_y += 50
+        # ── Branching Map Graph ──
+        scroll_offset = self._get_scroll_offset(dungeon)
+        nodes_by_floor = dungeon.get_nodes_by_floor()
+        
+        # Draw connections first (behind nodes)
+        for node in dungeon.nodes.values():
+            start_rect = self._get_node_rect(node, scroll_offset)
+            for child_id in node.children_ids:
+                child = dungeon.nodes.get(child_id)
+                if child:
+                    end_rect = self._get_node_rect(child, scroll_offset)
+                    # Color based on reachability/completion
+                    line_col = GREY
+                    if node.completed and child.reachable:
+                        line_col = GOLD
+                    elif node.completed and child.completed:
+                        line_col = WHITE
+                    
+                    pygame.draw.line(surface, line_col, start_rect.center, end_rect.center, 3)
+
+        # Draw nodes
+        mx, my = pygame.mouse.get_pos()
+        for floor, nodes in nodes_by_floor.items():
+            for node in nodes:
+                rect = self._get_node_rect(node, scroll_offset)
+                color = NODE_COLORS.get(node.node_type, GREY)
+                icon_img = self.icons.get(node.node_type)
+                
+                # Highlight current/selected
+                if node.current:
+                    pygame.draw.circle(surface, GOLD, rect.center, 32, 3)
+                    pygame.draw.circle(surface, (*GOLD, 40), rect.center, 30)
+                elif node.reachable:
+                    # Pulsing highlight for reachable
+                    pulse = int(5 * math.sin(pygame.time.get_ticks() * 0.005))
+                    pygame.draw.circle(surface, (200, 200, 200), rect.center, 28 + pulse, 2)
+                
+                # Draw node base
+                base_col = (30, 30, 40)
+                if node.completed:
+                    base_col = (50, 50, 60)
+                pygame.draw.circle(surface, base_col, rect.center, 24)
+                pygame.draw.circle(surface, color if not node.completed else GREY, rect.center, 24, 2)
+
+                # Draw icon
+                if icon_img:
+                    icon_rect = icon_img.get_rect(center=rect.center)
+                    if node.completed:
+                        # Draw grayscale or dark if completed? For now just draw normal.
+                        surface.blit(icon_img, icon_rect)
+                    else:
+                        surface.blit(icon_img, icon_rect)
+                else:
+                    icon = NODE_ICONS.get(node.node_type, "?")
+                    draw_text(surface, icon, rect.centerx, rect.centery - 10, self.font, WHITE, center=True)
+
+                # Label (Floor)
+                # draw_text(surface, str(node.floor), rect.centerx, rect.centery + 15, self.font_small, LIGHT_GREY, center=True)
 
         # ── Enter button ──
         mx, my = pygame.mouse.get_pos()

@@ -21,6 +21,7 @@ class Hero:
         self.energy = 3
         self.max_energy = 3
         self.gold = 99
+        self.combat_state = None  # Reference for relic triggers
 
         # Deck management
         self.deck: list[Card] = []       # Full deck (all owned cards)

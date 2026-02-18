@@ -33,6 +33,13 @@ class CombatScreen:
         self.enemy_turn_timer = 0.0
         self.enemy_turn_pending = False
 
+        # ── Asset Loading ──
+        self.enemy_images = {}
+        try:
+            self.enemy_images["Slime"] = pygame.image.load("assets/icons/Slime.png").convert_alpha()
+        except:
+            pass
+
     # ── Card Layout ────────────────────────────────────────────────────────────
 
     def _card_rects(self, hand_size: int) -> list[pygame.Rect]:
@@ -289,12 +296,22 @@ class CombatScreen:
         # Statuses
         draw_status_icons(surface, enemy.statuses, rect.x + 5, rect.y + 100, self.font_tiny)
 
-        # Enemy art (simple geometric shape)
+        # Enemy art (image or geometric fallback)
         cx, cy = rect.centerx, rect.y + 145
         pulse = int(5 * math.sin(self.time * 3 + idx))
-        pygame.draw.circle(surface, (180, 60, 60), (cx, cy), 18 + pulse)
-        pygame.draw.circle(surface, (220, 100, 100), (cx, cy), 12 + pulse // 2)
-        pygame.draw.circle(surface, (255, 150, 150), (cx, cy), 6)
+        
+        img = self.enemy_images.get(enemy.name)
+        if img:
+            # Scale and center the image
+            iw, ih = img.get_size()
+            scale_factor = 100 / max(iw, ih)
+            scaled_img = pygame.transform.scale(img, (int(iw * scale_factor), int(ih * scale_factor)))
+            sr = scaled_img.get_rect(center=(cx, cy + pulse))
+            surface.blit(scaled_img, sr)
+        else:
+            pygame.draw.circle(surface, (180, 60, 60), (cx, cy), 18 + pulse)
+            pygame.draw.circle(surface, (220, 100, 100), (cx, cy), 12 + pulse // 2)
+            pygame.draw.circle(surface, (255, 150, 150), (cx, cy), 6)
 
     def _draw_card(self, surface, card, rect, hovered, selected, playable):
         draw_y = rect.y - (30 if hovered else 0)

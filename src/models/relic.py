@@ -191,6 +191,29 @@ class MagicFlower(Relic):
         hero._healing_multiplier = 1.5
 
 
+class Kryptonite(Relic):
+    """On boss entry, deal 10% of boss max HP."""
+    def __init__(self):
+        super().__init__("Kryptonite", "Deal 10% Boss HP on entry.", "Uncommon")
+
+    def on_combat_start(self, hero):
+        from src.systems.combat import CombatState
+        # Assuming we can check if any enemy is a boss
+        for enemy in hero.combat_state.enemies:
+            if getattr(enemy, 'is_boss', False):
+                dmg = int(enemy.max_hp * 0.10)
+                enemy.take_damage(dmg, ignore_block=True)
+
+
+class FirePendant(Relic):
+    """Heal 6 HP at end of combat."""
+    def __init__(self):
+        super().__init__("Fire Pendant", "Heal 6 HP at end of each combat.", "Starter")
+
+    def on_combat_end(self, hero):
+        hero.heal(6)
+
+
 RELIC_POOL = [
     Anchor,
     BagOfPreparation,
@@ -204,11 +227,13 @@ RELIC_POOL = [
     Akabeko,
     Centennial_Puzzle,
     MagicFlower,
+    Kryptonite,
+    FirePendant,
 ]
 
 
 def get_starter_relic() -> Relic:
-    return BurningBlood()
+    return FirePendant()
 
 
 def get_random_relic(exclude_names: list[str] = None) -> Relic:

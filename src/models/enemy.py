@@ -330,7 +330,14 @@ def get_enemy_for_floor(floor: int) -> Enemy:
     """Return a scaled enemy appropriate for the given floor."""
     from src.constants import enemy_hp_scale, enemy_dmg_scale, BOSS_EVERY
 
-    if floor % BOSS_EVERY == 0:
+    if floor == 1:
+        # Guarantee Slime for the first fight as requested
+        enemy = Enemy("Slime", 35, [
+            _atk(5),
+            _atk(5),
+            _def(8),
+        ], tier=1)
+    elif floor % BOSS_EVERY == 0:
         boss_index = (floor // BOSS_EVERY - 1) % len(BOSSES)
         enemy = BOSSES[boss_index]()
     elif floor <= 3:

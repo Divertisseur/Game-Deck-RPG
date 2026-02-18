@@ -35,35 +35,103 @@ NODE_COLORS = {
 
 @dataclass
 class DungeonNode:
+    id: str
     floor: int
     node_type: str
+    x_pos: int                      # Horizontal position index (0 to width-1)
+    children_ids: list[str] = field(default_factory=list)
     completed: bool = False
     current: bool = False
+    reachable: bool = False          # Can the player move here?
 
 
 class Dungeon:
     def __init__(self):
         self.current_floor = 0
-        self.nodes: list[DungeonNode] = []
-        self._generate_next_node()
+        self.nodes: dict[str, DungeonNode] = {} # id -> node
+        self.width = 5 # Number of parallel paths
+        self.act_length = 15
+        self._generate_act()
 
-    def _generate_next_node(self):
-        from src.constants import get_node_weights, BOSS_EVERY, ELITE_FLOOR_MIN
-        floor = self.current_floor + 1
-        weights = get_node_weights(floor)
-        node_type = random.choices(
-            list(weights.keys()),
-            weights=list(weights.values()),
-            k=1
-        )[0]
-        node = DungeonNode(floor=floor, node_type=node_type, current=True)
-        self.nodes.append(node)
+    def _generate_act(self):
+        """Generate a structured branching graph for the entire act."""
+        from src.constants import get_node_weights, BOSS_EVERY
+        
+        # 1. Create nodes by floor
+        floors: list[list[DungeonNode]] = []
+        for f in range(1, self.act_length):
+            floor_nodes = []
+            num_nodes = random.randint(3, self.width)
+            
+            # Distribute nodes horizontally
+            x_positions = sorted(random.sample(range(self.width), num_nodes))
+            
+            for x in x_positions:
+                node_id = f"f{f}_x{x}"
+                weights = get_node_weights(f)
+                
+                # Floor 1 is usually combat
+                if f == 1:
+                    node_type = NODE_ENEMY
+                else:
+                    node_type = random.choices(list(weights.keys()), weights=list(weights.values()))[0]
+                
+                node = DungeonNode(id=node_id, floor=f, node_type=node_type, x_pos=x)
+                floor_nodes.append(node)
+                self.nodes[node_id] = node
+            floors.append(floor_nodes)
+
+        # 2. Add Boss Node
+        boss_id = f"f{self.act_length}_x{self.width // 2}"
+        boss_node = DungeonNode(id=boss_id, floor=self.act_length, node_type=NODE_BOSS, x_pos=self.width // 2)
+        self.nodes[boss_id] = boss_node
+        floors.append([boss_node])
+
+        # 3. Create connections
+        for f in range(len(floors) - 1):
+            current_floor_nodes = floors[f]
+            next_floor_nodes = floors[f + 1]
+            
+            for node in current_floor_nodes:
+                # Find nodes in next floor that are "reachable" (x separation <= 1)
+                potentials = [n for n in next_floor_nodes if abs(n.x_pos - node.x_pos) <= 1]
+                
+                # If no direct neighbors, bridge to the closest
+                if not potentials:
+                    potentials = [min(next_floor_nodes, key=lambda n: abs(n.x_pos - node.x_pos))]
+                
+                for p in potentials:
+                    node.children_ids.append(p.id)
+
+            # Ensure every node in 'next_floor' has at least one parent (prevents dead ends)
+            for target in next_floor_nodes:
+                if not any(target.id in n.children_ids for n in current_floor_nodes):
+                    parent = min(current_floor_nodes, key=lambda n: abs(n.x_pos - target.x_pos))
+                    parent.children_ids.append(target.id)
+
+        # Initial state: First floor nodes are current options? 
+        # Actually, in STS you pick one to start. We'll mark Floor 1 as reachable.
+        for node in floors[0]:
+            node.reachable = True
 
     def current_node(self) -> Optional[DungeonNode]:
-        for n in self.nodes:
+        for n in self.nodes.values():
             if n.current:
                 return n
         return None
+
+    def select_node(self, node_id: str):
+        """Player picks a reachable node."""
+        node = self.nodes.get(node_id)
+        if node and node.reachable:
+            # Deselect current
+            curr = self.current_node()
+            if curr:
+                curr.current = False
+            
+            node.current = True
+            return True
+        return False
 
     def complete_current_node(self):
         node = self.current_node()
@@ -71,14 +139,23 @@ class Dungeon:
             node.completed = True
             node.current = False
             self.current_floor = node.floor
-            self._generate_next_node()
+            
+            # Clear previous reachable
+            for n in self.nodes.values():
+                n.reachable = False
+                
+            # Set next reachable
+            for cid in node.children_ids:
+                if cid in self.nodes:
+                    self.nodes[cid].reachable = True
 
-    def peek_next_node(self) -> Optional[DungeonNode]:
-        """Return the upcoming node without advancing."""
-        for n in self.nodes:
-            if n.current:
-                return n
-        return None
+    def get_nodes_by_floor(self) -> dict[int, list[DungeonNode]]:
+        by_floor = {}
+        for n in self.nodes.values():
+            if n.floor not in by_floor:
+                by_floor[n.floor] = []
+            by_floor[n.floor].append(n)
+        return by_floor
 
 
 # ─────────────────────────────────────────────

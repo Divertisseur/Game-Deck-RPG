@@ -35,11 +35,10 @@ class CombatState:
         if self._started:
             return
         self._started = True
+        self.hero.combat_state = self
         self.hero.prepare_deck()
         # Relic: on_combat_start
         self.hero.trigger_relics("on_combat_start")
-        for relic in self.hero.relics:
-            relic.on_combat_start(self.hero)
         self._begin_player_turn()
 
     def _begin_player_turn(self):
